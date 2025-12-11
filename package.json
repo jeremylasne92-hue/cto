@@ -1,0 +1,38 @@
+{
+  "name": "srs-companion",
+  "version": "1.0.0",
+  "description": "SRS Mobile Companion App - Spaced Repetition System for mobile devices",
+  "private": true,
+  "workspaces": [
+    "mobile"
+  ],
+  "scripts": {
+    "mobile": "cd mobile && npm start",
+    "mobile:ios": "cd mobile && npm run ios",
+    "mobile:android": "cd mobile && npm run android",
+    "mobile:test": "cd mobile && npm test",
+    "mobile:lint": "cd mobile && npm run lint",
+    "mobile:typecheck": "cd mobile && npm run typecheck",
+    "clean": "rm -rf mobile/node_modules mobile/ios/Pods mobile/android/build",
+    "setup": "cd mobile && npm install && cd ios && pod install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/srs-companion.git"
+  },
+  "keywords": [
+    "srs",
+    "spaced-repetition",
+    "flashcards",
+    "learning",
+    "mobile",
+    "react-native",
+    "education"
+  ],
+  "author": "Your Team",
+  "license": "PROPRIETARY",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
