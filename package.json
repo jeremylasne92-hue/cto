@@ -1,0 +1,46 @@
+{
+  "name": "learning-platform-desktop",
+  "version": "1.0.0",
+  "description": "Desktop UI for Learning Platform with review interface",
+  "main": "src/main/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run electron:dev\" \"npm run react:dev\"",
+    "electron:dev": "nodemon --exec electron src/main/main.js",
+    "electron:start": "electron .",
+    "react:dev": "cd src/renderer && npm run dev",
+    "react:build": "cd src/renderer && npm run build",
+    "build": "npm run react:build && npm run electron:build",
+    "electron:build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.6.4",
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.1.4"
+  },
+  "build": {
+    "appId": "com.learningplatform.desktop",
+    "productName": "Learning Platform Desktop",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/main/**/*",
+      "src/renderer/dist/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.education"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
