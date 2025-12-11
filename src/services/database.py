@@ -77,6 +77,89 @@ class JobDB(Base):
     )
 
 
+class QuizDB(Base):
+    """SQLite model for generated quizzes"""
+    __tablename__ = "quizzes"
+    
+    id = Column(String, primary_key=True)
+    source_id = Column(String, nullable=True, index=True)
+    quiz_type = Column(String, nullable=False)
+    status = Column(String, default="pending")
+    model_used = Column(String, nullable=True)
+    metadata_json = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_quizzes_source_id', 'source_id'),
+        Index('idx_quizzes_status', 'status'),
+        Index('idx_quizzes_created_at', 'created_at'),
+    )
+
+
+class QuestionDB(Base):
+    """SQLite model for quiz questions"""
+    __tablename__ = "questions"
+    
+    id = Column(String, primary_key=True)
+    quiz_id = Column(String, nullable=False, index=True)
+    question_text = Column(Text, nullable=False)
+    question_type = Column(String, nullable=False)
+    question_data = Column(JSON, nullable=False)  # Stores options/answers/pairs
+    explanation = Column(Text, nullable=True)
+    metadata_json = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_questions_quiz_id', 'quiz_id'),
+    )
+
+
+class MindMapDB(Base):
+    """SQLite model for generated mind maps"""
+    __tablename__ = "mindmaps"
+    
+    id = Column(String, primary_key=True)
+    source_id = Column(String, nullable=True, index=True)
+    status = Column(String, default="pending")
+    model_used = Column(String, nullable=True)
+    root_node_id = Column(String, nullable=True)
+    metadata_json = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_mindmaps_source_id', 'source_id'),
+        Index('idx_mindmaps_status', 'status'),
+        Index('idx_mindmaps_created_at', 'created_at'),
+    )
+
+
+class MindMapNodeDB(Base):
+    """SQLite model for mind map nodes"""
+    __tablename__ = "mindmap_nodes"
+    
+    id = Column(String, primary_key=True)
+    mindmap_id = Column(String, nullable=False, index=True)
+    parent_id = Column(String, nullable=True, index=True)
+    content = Column(Text, nullable=False)
+    summary = Column(Text, nullable=True)
+    level = Column(Integer, nullable=False)
+    metadata_json = Column(JSON, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_mindmap_nodes_mindmap_id', 'mindmap_id'),
+        Index('idx_mindmap_nodes_parent_id', 'parent_id'),
+    )
+
+
 class DatabaseManager:
     """Manager for SQLite database operations"""
     
@@ -204,4 +287,146 @@ class DatabaseManager:
                     "chunk_count": job.chunk_count
                 }
                 for job in job_dbs
+            ]
+    
+    def get_chunks_by_ids(self, chunk_ids: list) -> list:
+        """Get specific chunks by their IDs"""
+        with self.get_session() as session:
+            chunk_dbs = session.query(ChunkDB).filter(ChunkDB.id.in_(chunk_ids)).all()
+            return [
+                {
+                    "id": chunk.id,
+                    "document_id": chunk.document_id,
+                    "content": chunk.content,
+                    "chunk_index": chunk.chunk_index,
+                    "start_char": chunk.start_char,
+                    "end_char": chunk.end_char,
+                    "chunk_hash": chunk.chunk_hash,
+                    "metadata": chunk.metadata_json,
+                    "created_at": chunk.created_at
+                }
+                for chunk in chunk_dbs
+            ]
+    
+    # Pedagogy engine methods
+    def insert_quiz(self, quiz_data: dict) -> str:
+        """Insert a quiz and return its ID"""
+        with self.get_session() as session:
+            quiz_db = QuizDB(**quiz_data)
+            session.add(quiz_db)
+            session.commit()
+            return quiz_db.id
+    
+    def update_quiz(self, quiz_id: str, updates: dict):
+        """Update a quiz"""
+        with self.get_session() as session:
+            quiz_db = session.query(QuizDB).filter_by(id=quiz_id).first()
+            if quiz_db:
+                for key, value in updates.items():
+                    setattr(quiz_db, key, value)
+                session.commit()
+    
+    def get_quiz(self, quiz_id: str) -> Optional[dict]:
+        """Get a quiz by ID"""
+        with self.get_session() as session:
+            quiz_db = session.query(QuizDB).filter_by(id=quiz_id).first()
+            if quiz_db:
+                return {
+                    "id": quiz_db.id,
+                    "source_id": quiz_db.source_id,
+                    "quiz_type": quiz_db.quiz_type,
+                    "status": quiz_db.status,
+                    "model_used": quiz_db.model_used,
+                    "metadata": quiz_db.metadata_json,
+                    "created_at": quiz_db.created_at,
+                    "completed_at": quiz_db.completed_at,
+                    "error_message": quiz_db.error_message
+                }
+            return None
+    
+    def insert_questions(self, questions_data: list) -> int:
+        """Insert multiple questions and return count"""
+        with self.get_session() as session:
+            question_dbs = [QuestionDB(**question_data) for question_data in questions_data]
+            session.add_all(question_dbs)
+            session.commit()
+            return len(question_dbs)
+    
+    def get_questions_by_quiz_id(self, quiz_id: str) -> list:
+        """Get all questions for a quiz"""
+        with self.get_session() as session:
+            question_dbs = session.query(QuestionDB).filter_by(quiz_id=quiz_id).all()
+            return [
+                {
+                    "id": question.id,
+                    "quiz_id": question.quiz_id,
+                    "question_text": question.question_text,
+                    "question_type": question.question_type,
+                    "question_data": question.question_data,
+                    "explanation": question.explanation,
+                    "metadata": question.metadata_json,
+                    "created_at": question.created_at
+                }
+                for question in question_dbs
+            ]
+    
+    def insert_mindmap(self, mindmap_data: dict) -> str:
+        """Insert a mind map and return its ID"""
+        with self.get_session() as session:
+            mindmap_db = MindMapDB(**mindmap_data)
+            session.add(mindmap_db)
+            session.commit()
+            return mindmap_db.id
+    
+    def update_mindmap(self, mindmap_id: str, updates: dict):
+        """Update a mind map"""
+        with self.get_session() as session:
+            mindmap_db = session.query(MindMapDB).filter_by(id=mindmap_id).first()
+            if mindmap_db:
+                for key, value in updates.items():
+                    setattr(mindmap_db, key, value)
+                session.commit()
+    
+    def get_mindmap(self, mindmap_id: str) -> Optional[dict]:
+        """Get a mind map by ID"""
+        with self.get_session() as session:
+            mindmap_db = session.query(MindMapDB).filter_by(id=mindmap_id).first()
+            if mindmap_db:
+                return {
+                    "id": mindmap_db.id,
+                    "source_id": mindmap_db.source_id,
+                    "status": mindmap_db.status,
+                    "model_used": mindmap_db.model_used,
+                    "root_node_id": mindmap_db.root_node_id,
+                    "metadata": mindmap_db.metadata_json,
+                    "created_at": mindmap_db.created_at,
+                    "completed_at": mindmap_db.completed_at,
+                    "error_message": mindmap_db.error_message
+                }
+            return None
+    
+    def insert_mindmap_nodes(self, nodes_data: list) -> int:
+        """Insert multiple mind map nodes and return count"""
+        with self.get_session() as session:
+            node_dbs = [MindMapNodeDB(**node_data) for node_data in nodes_data]
+            session.add_all(node_dbs)
+            session.commit()
+            return len(node_dbs)
+    
+    def get_mindmap_nodes(self, mindmap_id: str) -> list:
+        """Get all nodes for a mind map"""
+        with self.get_session() as session:
+            node_dbs = session.query(MindMapNodeDB).filter_by(mindmap_id=mindmap_id).all()
+            return [
+                {
+                    "id": node.id,
+                    "mindmap_id": node.mindmap_id,
+                    "parent_id": node.parent_id,
+                    "content": node.content,
+                    "summary": node.summary,
+                    "level": node.level,
+                    "metadata": node.metadata_json,
+                    "created_at": node.created_at
+                }
+                for node in node_dbs
             ]

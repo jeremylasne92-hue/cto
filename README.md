@@ -1,6 +1,6 @@
-# Universal Ingestion Service
+# Universal Ingestion Service with Pedagogy Engine
 
-A comprehensive document ingestion pipeline service that processes multiple source types, normalizes content, chunks documents semantically, and stores embeddings for vector similarity search.
+A comprehensive document ingestion pipeline service that processes multiple source types, normalizes content, chunks documents semantically, and stores embeddings for vector similarity search. Now includes an AI-driven pedagogy engine for generating quizzes and mind maps from ingested content.
 
 ## Features
 
@@ -18,6 +18,14 @@ A comprehensive document ingestion pipeline service that processes multiple sour
 - **Vector Storage**: LanceDB for efficient similarity search
 - **Background Processing**: FastAPI background tasks for async ingestion
 - **REST API**: Complete CRUD interface for job management
+
+### Pedagogy Engine (NEW)
+- **Quiz Generation**: MCQ, Fill-in-the-Blank, and Matching questions from ingested content
+- **Mind Map Generation**: Hierarchical concept maps with configurable depth and branching
+- **Hybrid Model Selection**: Automatic selection between local models (Mistral-7B, Phi-2) and cloud API
+- **Hardware-Aware**: Benchmarks CPU, RAM, and GPU to select optimal model
+- **Smart Fallback**: Automatically falls back to cloud API when local resources insufficient
+- **See [PEDAGOGY_ENGINE.md](PEDAGOGY_ENGINE.md) for detailed documentation**
 
 ## Architecture
 
@@ -141,6 +149,52 @@ GET /search?query=machine learning&limit=10&filter_source_type=pdf
 #### System Statistics
 ```http
 GET /stats
+```
+
+#### Generate Quiz (Pedagogy Engine)
+```http
+POST /pedagogy/quiz
+Content-Type: application/json
+
+{
+    "source_id": "doc-123",
+    "config": {
+        "quiz_type": "mcq",
+        "num_questions": 5,
+        "difficulty": "medium",
+        "include_explanations": true
+    }
+}
+```
+
+#### Get Quiz
+```http
+GET /pedagogy/quiz/{quiz_id}
+```
+
+#### Generate Mind Map
+```http
+POST /pedagogy/mindmap
+Content-Type: application/json
+
+{
+    "source_id": "doc-123",
+    "config": {
+        "max_depth": 4,
+        "max_children_per_node": 7,
+        "include_summaries": true
+    }
+}
+```
+
+#### Get Mind Map
+```http
+GET /pedagogy/mindmap/{mindmap_id}
+```
+
+#### Check Model Status
+```http
+GET /pedagogy/models/status
 ```
 
 ### Example Usage

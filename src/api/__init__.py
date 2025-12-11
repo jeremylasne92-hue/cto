@@ -21,6 +21,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Include pedagogy router
+from .pedagogy import router as pedagogy_router
+app.include_router(pedagogy_router)
+
 # Global ingestion service instance (in production, this should be injected)
 ingestion_service = IngestionService()
 
