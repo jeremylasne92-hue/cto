@@ -1,0 +1,28 @@
+# Flashcard Sync Engine Dependencies
+
+# Core dependencies
+flask==2.3.3
+flask-cors==4.0.0
+flask-sqlalchemy==3.0.5
+python-dotenv==1.0.0
+requests==2.31.0
+python-dateutil==2.8.2
+
+# Database
+sqlite3  # Built into Python
+
+# WebSocket for future Phase 2
+flask-socketio==5.3.6
+python-socketio==5.9.0
+
+# Authentication
+pyjwt==2.8.0
+bcrypt==4.0.1
+
+# Testing
+pytest==7.4.2
+pytest-flask==1.2.0
+
+# Development
+black==23.9.1
+isort==5.12.0
