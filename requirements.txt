@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlalchemy
+alembic
+pydantic
+pytest
+httpx
+python-dateutil
+asyncpg
+greenlet
