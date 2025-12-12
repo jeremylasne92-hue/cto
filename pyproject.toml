@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cognisphere-pte"
+version = "0.1.0"
+description = "Pedagogical Transformation Engine: quiz, mind maps, summaries, and Socratic prompt templates."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Cognisphere" }]
+
+dependencies = []
+
+[project.optional-dependencies]
+local-llm = ["llama-cpp-python>=0.2.79"]
+cloud-openai = ["openai>=1.0.0"]
+cloud-anthropic = ["anthropic>=0.25.0"]
+cloud-groq = ["groq>=0.8.0"]
+embeddings = ["sentence-transformers>=2.7.0"]
+pdf = ["pypdf>=4.0.0"]
+
+[project.scripts]
+cognisphere-pte = "cognisphere_pte.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
