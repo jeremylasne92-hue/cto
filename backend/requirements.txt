@@ -10,3 +10,4 @@ GPUtil==1.4.0
 PyInstaller==6.3.0
 pydantic==2.5.2
 python-dotenv==1.0.0
+networkx==3.2.1

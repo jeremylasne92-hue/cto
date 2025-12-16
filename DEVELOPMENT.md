@@ -138,6 +138,25 @@ npm run android
 
 ## API Endpoints
 
+### Knowledge Graph API (Phase 2)
+- `POST /api/knowledge-graph/query` - Filter depth, search term
+- `POST /api/knowledge-graph/related` - Semantic neighbor lookup
+- `POST /api/knowledge-graph/integrity-check` - Graph integrity validation
+- `POST /api/concepts` - Create/Update concept
+- `DELETE /api/concepts/<id>` - Delete concept
+- `POST /api/relations` - Create relation
+
+### Graph Visualization
+- **Library**: `react-force-graph` (WebGL) with Canvas fallback
+- **Controls**:
+  - **Search**: Filter graph by concept name
+  - **Integrity Check**: Validate graph structure
+- **Color Coding**:
+  - Green: >80% Mastery
+  - Yellow: 50-80% Mastery
+  - Orange: 20-50% Mastery
+  - Gray: <20% Mastery
+
 ### Health & Info
 - `GET /health` - Health check
 - `GET /api/hardware-info` - System hardware information

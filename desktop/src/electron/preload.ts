@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  callBackend: (method: string, params: unknown) =>
-    ipcRenderer.invoke('backend:call', method, params),
+  callBackend: (endpoint: string, method: string = 'POST', body: unknown = {}, query: Record<string, string> = {}) =>
+    ipcRenderer.invoke('backend:call', endpoint, method, body, query),
   
   checkBackendHealth: () =>
     ipcRenderer.invoke('backend:health'),

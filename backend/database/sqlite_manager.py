@@ -143,6 +143,41 @@ class SQLiteManager:
             ON review_logs(card_id)
         ''')
         
+        # Phase 2: Knowledge Graph Extensions
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS concept_mastery (
+                concept_id TEXT PRIMARY KEY,
+                mastery_level REAL DEFAULT 0.0,
+                review_count INTEGER DEFAULT 0,
+                last_assessed TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (concept_id) REFERENCES concepts(id) ON DELETE CASCADE
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS concept_layout_cache (
+                concept_id TEXT PRIMARY KEY,
+                x REAL NOT NULL,
+                y REAL NOT NULL,
+                fixed BOOLEAN DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (concept_id) REFERENCES concepts(id) ON DELETE CASCADE
+            )
+        ''')
+
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_concept_relations_1 
+            ON concept_relations(concept_id_1)
+        ''')
+
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_concept_relations_2 
+            ON concept_relations(concept_id_2)
+        ''')
+        
         conn.commit()
     
     def get_table_count(self) -> int:

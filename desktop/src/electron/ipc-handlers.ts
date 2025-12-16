@@ -4,19 +4,27 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export function setupIpcHandlers(ipcMain: IpcMain): void {
-  ipcMain.handle('backend:call', async (_event, method: string, params: unknown) => {
+  ipcMain.handle('backend:call', async (_event, endpoint: string, method: string = 'POST', body: unknown = {}, query: Record<string, string> = {}) => {
     try {
       if (!backendProcess) {
         throw new Error('Backend process not started');
       }
 
       const backendUrl = backendProcess.getUrl();
-      const response = await fetch(`${backendUrl}/api/${method}`, {
-        method: 'POST',
+      const url = new URL(`${backendUrl}/api/${endpoint}`);
+      
+      if (query) {
+        Object.entries(query).forEach(([key, value]) => {
+          url.searchParams.append(key, value as string);
+        });
+      }
+
+      const response = await fetch(url.toString(), {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(params),
+        body: (method !== 'GET' && method !== 'HEAD') ? JSON.stringify(body) : undefined,
       });
 
       if (!response.ok) {

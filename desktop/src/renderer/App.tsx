@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 interface ElectronAPI {
-  callBackend: (method: string, params: unknown) => Promise<unknown>;
+  callBackend: (endpoint: string, method?: string, body?: unknown, query?: Record<string, string>) => Promise<unknown>;
   checkBackendHealth: () => Promise<{ status: string }>;
   getAppVersion: () => Promise<string>;
   onUpdateAvailable: (callback: () => void) => void;

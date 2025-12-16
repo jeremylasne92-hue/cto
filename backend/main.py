@@ -5,6 +5,8 @@ from flask_cors import CORS
 from config.hardware_detection import HardwareDetector
 from config.tier_selection import TierSelector
 from database.sqlite_manager import SQLiteManager
+from core.graph.knowledge_graph_service import KnowledgeGraphService
+from api.knowledge_graph import bp as knowledge_graph_bp
 
 try:
     from database.lancedb_manager import LanceDBManager
@@ -45,6 +47,9 @@ def initialize_app():
         lancedb_manager.initialize()
     else:
         print("Warning: LanceDB not available, embedding functionality disabled")
+    
+    app.kg_service = KnowledgeGraphService(sqlite_manager, lancedb_manager)
+    app.register_blueprint(knowledge_graph_bp)
     
     print(f"Hardware detected: RAM={hardware_info['ram_gb']:.1f}GB, GPU={hardware_info['has_gpu']}")
     print(f"Selected tier: {selected_tier}")
