@@ -1,0 +1,238 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.close-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.comparison-input {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.comparison-input input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.comparison-input button {
+  padding: 0.75rem 1.5rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.comparison-input button:hover {
+  background: #2980b9;
+}
+
+.comparison-input button:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
+}
+
+.comparison-results {
+  margin-top: 2rem;
+}
+
+.comparison-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.user-badge {
+  padding: 0.5rem 1rem;
+  background: #3498db;
+  color: white;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.comparison-header span {
+  color: #999;
+  font-weight: bold;
+}
+
+.skills-section {
+  margin-bottom: 2rem;
+}
+
+.skills-section h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.skills-comparison-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.skill-comparison {
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.skill-name {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.75rem;
+}
+
+.skill-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skill-bar-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 60px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-label {
+  font-size: 0.85rem;
+  color: #666;
+  text-align: right;
+}
+
+.skill-bar {
+  height: 24px;
+  background: #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.skill-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.skill-bar-fill.user1 {
+  background: linear-gradient(90deg, #3498db, #2980b9);
+}
+
+.skill-bar-fill.user2 {
+  background: linear-gradient(90deg, #e74c3c, #c0392b);
+}
+
+.mastery-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2c3e50;
+  text-align: left;
+}
+
+.difference {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.difference.ahead {
+  background: #d4edda;
+  color: #155724;
+}
+
+.difference.behind {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.unique-skills-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.unique-skills-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.unique-skill {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.unique-skill .mastery {
+  font-weight: 600;
+  color: #27ae60;
+}
