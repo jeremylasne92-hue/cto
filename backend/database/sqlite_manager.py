@@ -1,15 +1,16 @@
 """
-SQLite Database Manager for Social Learning Platform
-Handles all database operations including social profile features
+SQLite Database Manager for Social Learning Platform & Knowledge Graph
+Handles all database operations including social profile features and knowledge graph
 """
 
 import sqlite3
 import json
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from contextlib import contextmanager
 import threading
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,8 @@ class SQLiteManager:
             
             # Enable foreign key constraints
             cursor.execute('PRAGMA foreign_keys = ON')
+            
+            # --- Social Platform Tables ---
             
             # Users table
             cursor.execute('''
@@ -106,16 +109,94 @@ class SQLiteManager:
                 )
             ''')
             
-            # Review logs table (for metrics aggregation)
+            # Review logs table (Shared)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS review_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     study_duration REAL DEFAULT 0.0, -- in minutes
                     xp_earned INTEGER DEFAULT 0,
-                    study_date DATE NOT NULL,
+                    mastery_score REAL DEFAULT 0.0,
+                    review_count INTEGER DEFAULT 0,
+                    concept_id INTEGER,
+                    study_date DATE,
+                    last_reviewed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (concept_id) REFERENCES concepts(id)
+                )
+            ''')
+            
+            # --- Knowledge Graph Tables ---
+            
+            # Core concepts table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS concepts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    content TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    parent_id INTEGER REFERENCES concepts(id)
+                )
+            ''')
+            
+            # Relations between concepts
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS relations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_concept_id INTEGER NOT NULL,
+                    target_concept_id INTEGER NOT NULL,
+                    relation_type TEXT NOT NULL DEFAULT 'prerequisite',
+                    strength REAL DEFAULT 1.0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (source_concept_id) REFERENCES concepts(id),
+                    FOREIGN KEY (target_concept_id) REFERENCES concepts(id)
+                )
+            ''')
+            
+            # Concept mastery table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS concept_mastery (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    concept_id INTEGER NOT NULL,
+                    mastery_percentage REAL DEFAULT 0.0,
+                    review_count INTEGER DEFAULT 0,
+                    last_assessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(user_id, concept_id),
+                    FOREIGN KEY (concept_id) REFERENCES concepts(id)
+                )
+            ''')
+
+            # Concept layout cache
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS concept_layout_cache (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    concept_id INTEGER NOT NULL,
+                    layout_data TEXT NOT NULL, -- JSON string with x, y, z coordinates
+                    layout_algorithm TEXT DEFAULT 'force-directed',
+                    zoom_level REAL DEFAULT 1.0,
+                    viewport_x REAL DEFAULT 0.0,
+                    viewport_y REAL DEFAULT 0.0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(concept_id),
+                    FOREIGN KEY (concept_id) REFERENCES concepts(id)
+                )
+            ''')
+
+            # Concept embeddings
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS concept_embeddings (
+                    concept_id INTEGER PRIMARY KEY,
+                    embedding_vector TEXT NOT NULL, -- JSON array
+                    embedding_model TEXT DEFAULT 'text-embedding-ada-002',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (concept_id) REFERENCES concepts(id)
                 )
             ''')
             
@@ -137,7 +218,7 @@ class SQLiteManager:
                 mastery_level,
                 updated_at
             FROM user_skills
-            WHERE visibility = TRUE
+            WHERE visibility = 1
         ''')
         
         # User profile with metrics view
@@ -167,7 +248,25 @@ class SQLiteManager:
             LEFT JOIN user_profiles up ON u.id = up.user_id
             LEFT JOIN user_metrics um ON u.id = um.user_id
         ''')
-    
+        
+        # Indexes for Knowledge Graph
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_concept_mastery_user_concept ON concept_mastery(user_id, concept_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_concept_mastery_mastery ON concept_mastery(mastery_percentage)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_concept_layout_cache_updated ON concept_layout_cache(updated_at)')
+        
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_relations_source ON relations(source_concept_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_relations_target ON relations(target_concept_id)')
+
+    def migrate_database(self):
+        """Run all migrations in safe order"""
+        try:
+            # Re-run init to ensure new tables exist
+            self.init_database()
+            logger.info("Database migration completed successfully")
+        except Exception as e:
+            logger.error(f"Database migration failed: {e}")
+            raise
+
     @contextmanager
     def get_cursor(self):
         """Get database cursor with automatic transaction management"""
@@ -197,6 +296,8 @@ class SQLiteManager:
         with self.get_cursor() as cursor:
             cursor.execute(query, params)
             return cursor.rowcount
+            
+    # --- SOCIAL PLATFORM METHODS ---
     
     # User management methods
     def create_user(self, handle: str, is_private: bool = False) -> int:
@@ -482,7 +583,7 @@ class SQLiteManager:
             FROM users u
             LEFT JOIN user_profiles up ON u.id = up.user_id
             LEFT JOIN user_metrics um ON u.id = um.user_id
-            LEFT JOIN user_skills us ON u.id = us.user_id AND us.visibility = TRUE
+            LEFT JOIN user_skills us ON u.id = us.user_id AND us.visibility = 1
             WHERE u.handle = ?
             GROUP BY u.id
         '''
@@ -516,7 +617,169 @@ class SQLiteManager:
             ORDER BY us.mastery_level DESC, us.skill_id
         '''
         return self.execute_query(query, (handle,))
+        
+    # --- KNOWLEDGE GRAPH METHODS ---
     
+    # Concept CRUD operations
+    def create_concept(self, name: str, description: str = "", content: str = "", parent_id: Optional[int] = None) -> int:
+        """Create a new concept"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO concepts (name, description, content, parent_id)
+                    VALUES (?, ?, ?, ?)
+                ''', (name, description, content, parent_id))
+                concept_id = cursor.lastrowid
+                conn.commit()
+                logger.info(f"Created concept {name} with ID {concept_id}")
+                return concept_id
+        except sqlite3.IntegrityError:
+            logger.error(f"Concept with name '{name}' already exists")
+            raise ValueError(f"Concept with name '{name}' already exists")
+        except Exception as e:
+            logger.error(f"Failed to create concept: {e}")
+            raise
+    
+    def get_concept(self, concept_id: int) -> Optional[Dict[str, Any]]:
+        """Get concept by ID"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM concepts WHERE id = ?', (concept_id,))
+                row = cursor.fetchone()
+                return dict(row) if row else None
+        except Exception as e:
+            logger.error(f"Failed to get concept {concept_id}: {e}")
+            raise
+    
+    def update_concept(self, concept_id: int, **kwargs) -> bool:
+        """Update concept"""
+        if not kwargs:
+            return False
+        
+        # Add updated_at timestamp
+        kwargs['updated_at'] = datetime.now().isoformat()
+        
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                set_clause = ', '.join([f"{k} = ?" for k in kwargs.keys()])
+                values = list(kwargs.values()) + [concept_id]
+                
+                cursor.execute(f'''
+                    UPDATE concepts 
+                    SET {set_clause}
+                    WHERE id = ?
+                ''', values)
+                
+                conn.commit()
+                return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Failed to update concept {concept_id}: {e}")
+            raise
+    
+    def delete_concept(self, concept_id: int) -> bool:
+        """Delete concept and related data"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                
+                # Delete related records first
+                cursor.execute('DELETE FROM relations WHERE source_concept_id = ? OR target_concept_id = ?', (concept_id, concept_id))
+                cursor.execute('DELETE FROM review_logs WHERE concept_id = ?', (concept_id,))
+                cursor.execute('DELETE FROM concept_mastery WHERE concept_id = ?', (concept_id,))
+                cursor.execute('DELETE FROM concept_layout_cache WHERE concept_id = ?', (concept_id,))
+                
+                # Delete the concept
+                cursor.execute('DELETE FROM concepts WHERE id = ?', (concept_id,))
+                
+                conn.commit()
+                return cursor.rowcount > 0
+        except Exception as e:
+            logger.error(f"Failed to delete concept {concept_id}: {e}")
+            raise
+    
+    # Relation operations
+    def create_relation(self, source_concept_id: int, target_concept_id: int, relation_type: str = "prerequisite", strength: float = 1.0) -> int:
+        """Create a relation between concepts"""
+        if source_concept_id == target_concept_id:
+            raise ValueError("Cannot create self-referencing relation")
+        
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO relations (source_concept_id, target_concept_id, relation_type, strength)
+                    VALUES (?, ?, ?, ?)
+                ''', (source_concept_id, target_concept_id, relation_type, strength))
+                relation_id = cursor.lastrowid
+                conn.commit()
+                logger.info(f"Created relation {relation_id}: {source_concept_id} -> {target_concept_id}")
+                return relation_id
+        except Exception as e:
+            logger.error(f"Failed to create relation: {e}")
+            raise
+    
+    def get_concept_relations(self, concept_id: int) -> List[Dict[str, Any]]:
+        """Get all relations for a concept"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT r.*, sc.name as source_name, tc.name as target_name
+                    FROM relations r
+                    JOIN concepts sc ON r.source_concept_id = sc.id
+                    JOIN concepts tc ON r.target_concept_id = tc.id
+                    WHERE r.source_concept_id = ? OR r.target_concept_id = ?
+                    ORDER BY r.strength DESC
+                ''', (concept_id, concept_id))
+                
+                return [dict(row) for row in cursor.fetchall()]
+        except Exception as e:
+            logger.error(f"Failed to get relations for concept {concept_id}: {e}")
+            raise
+    
+    # Mastery operations
+    def update_mastery(self, user_id: str, concept_id: int, mastery_percentage: float, review_count: int = 1):
+        """Update user mastery for a concept"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO concept_mastery (user_id, concept_id, mastery_percentage, review_count, last_assessed)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(user_id, concept_id) 
+                    DO UPDATE SET
+                        mastery_percentage = excluded.mastery_percentage,
+                        review_count = concept_mastery.review_count + excluded.review_count,
+                        last_assessed = excluded.last_assessed
+                ''', (user_id, concept_id, mastery_percentage, review_count, datetime.now().isoformat()))
+                conn.commit()
+                logger.info(f"Updated mastery for user {user_id}, concept {concept_id}: {mastery_percentage}%")
+        except Exception as e:
+            logger.error(f"Failed to update mastery: {e}")
+            raise
+    
+    def get_mastery(self, user_id: str, concept_id: int) -> Optional[Dict[str, Any]]:
+        """Get user's mastery for a concept"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT * FROM concept_mastery 
+                    WHERE user_id = ? AND concept_id = ?
+                ''', (user_id, concept_id))
+                row = cursor.fetchone()
+                return dict(row) if row else None
+        except Exception as e:
+            logger.error(f"Failed to get mastery: {e}")
+            raise
+            
     def close(self):
         """Close all database connections"""
         if hasattr(self._local, 'conn'):

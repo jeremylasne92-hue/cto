@@ -1,42 +1,63 @@
 """
-Main Flask Application for Social Learning Platform
+Main Flask Application for Social Learning Platform & Knowledge Graph
 Wires together all blueprints and initializes the application
 """
-
+import os
 import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
 
 # Import blueprints
 from backend.api.profile import profile_bp
+from backend.api.knowledge_graph import knowledge_graph_bp
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+logger = logging.getLogger(__name__)
 
 def create_app():
     """Create and configure Flask application"""
     app = Flask(__name__)
     
     # Enable CORS
-    CORS(app, origins=["http://localhost:3000", "http://localhost:19006"])
+    CORS(app, origins=["*"])
     
     # Register blueprints
     app.register_blueprint(profile_bp)
+    app.register_blueprint(knowledge_graph_bp)
     
     # Add root route
     @app.route('/')
     def index():
         return jsonify({
-            'message': 'Social Learning Platform API',
+            'message': 'Social Learning Platform & Knowledge Graph API',
             'version': '1.0.0',
+            'services': ['profile', 'knowledge-graph'],
             'endpoints': {
-                'profile': '/api/profile',
-                'health': '/api/profile/health',
-                'public_profile': '/api/profile/public/<handle>'
+                'profile': {
+                    'base': '/api/profile',
+                    'health': '/api/profile/health',
+                    'public_profile': '/api/profile/public/<handle>'
+                },
+                'knowledge_graph': {
+                    'query': '/api/query',
+                    'concepts': '/api/concepts',
+                    'search': '/api/search',
+                    'stats': '/api/stats'
+                }
             }
+        })
+    
+    # Health check endpoint
+    @app.route('/health')
+    def health_check():
+        return jsonify({
+            'status': 'healthy',
+            'services': ['profile', 'knowledge-graph'],
+            'version': '1.0.0'
         })
     
     # Error handlers
@@ -62,6 +83,14 @@ def create_app():
         
         # Test database connection
         db_manager = SQLiteManager()
+        
+        # Run migrations if available (for knowledge graph)
+        if hasattr(db_manager, 'migrate_database'):
+            try:
+                db_manager.migrate_database()
+            except Exception as e:
+                logger.warning(f"Migration warning: {e}")
+
         app.db_manager = db_manager
         app.profile_service = ProfileService(db_manager)
         
@@ -69,10 +98,19 @@ def create_app():
         
     except Exception as e:
         logging.error(f"Failed to initialize database: {e}")
-        raise
+        # We continue even if DB fails to allow basic API health checks if possible
+        pass
     
     return app
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    
+    # Get configuration from environment
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('DEBUG', 'true').lower() == 'true'
+    host = os.environ.get('HOST', '0.0.0.0')
+    
+    logger.info(f"Starting API on {host}:{port}")
+    
+    app.run(host=host, port=port, debug=debug)
