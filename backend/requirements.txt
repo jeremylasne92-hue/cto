@@ -1,0 +1,13 @@
+flask==3.0.0
+flask-cors==4.0.0
+sentence-transformers==2.2.2
+lancedb==0.3.3
+pyarrow==14.0.1
+numpy==1.24.3
+torch==2.1.1
+psutil==5.9.6
+GPUtil==1.4.0
+PyInstaller==6.3.0
+pydantic==2.5.2
+python-dotenv==1.0.0
+networkx==3.2.1
