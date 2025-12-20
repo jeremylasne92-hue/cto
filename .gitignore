@@ -16,11 +16,16 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
 
 # Virtual environments
 .env
@@ -30,10 +35,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -48,22 +49,26 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+lib-cov/
+coverage/
+*.lcov
+.nyc_output
 
 # Translations
 *.mo
 *.pot
 
-# Django stuff:
+# Django stuff
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
-# Flask stuff:
+# Flask stuff
 instance/
 .webassets-cache
 
-# Scrapy stuff:
+# Scrapy stuff
 .scrapy
 
 # Sphinx documentation
@@ -100,10 +105,12 @@ celerybeat.pid
 .idea/
 *.swp
 *.swo
+*.swn
 *~
 .spyderproject
 .spyproject
 .ropeproject
+*.code-workspace
 
 # mkdocs documentation
 /site
@@ -121,32 +128,66 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 .npm
 .eslintcache
+.grunt
+bower_components
+.lock-wscript
+build/Release
+jspm_packages/
+web_modules/
+*.tsbuildinfo
+.node_repl_history
+*.tgz
+.yarn-integrity
+.env.test
+.env.production
+.parcel-cache
+.next
+out
+.nuxt
+.cache/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.vscode-test
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
 
 # Runtime data
-pids
+pids/
 *.pid
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
-coverage/
-
-# Desktop
+# Desktop (Electron)
 desktop/dist/
 desktop/build/
+desktop/out/
 desktop/.electron/
 
-# Mobile
+# Mobile (React Native / Expo)
 mobile/.expo/
+mobile/.expo-shared/
 mobile/dist/
 mobile/web-build/
+mobile/android/app/build/
+mobile/ios/Pods/
+mobile/ios/build/
 
 # Database files
 *.db
 *.sqlite
 *.sqlite3
+data/
 
 # Logs
 logs/
@@ -164,6 +205,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+.tmp/
+.temp/
 
 # Backup files
 *.bak
