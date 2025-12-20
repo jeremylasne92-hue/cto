@@ -2,29 +2,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Virtual environments
-.venv/
-venv/
-ENV/
-
-# Distribution / packaging
-build/
-dist/
-*.egg-info/
-
-# Test / coverage
-.pytest_cache/
-.coverage
-htmlcov/
-
-# OS / Editor
-.DS_Store
-.idea/
-.vscode/
-
-# Cache
-.cache/
 *.so
 .Python
 build/
@@ -39,6 +16,7 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -53,12 +31,69 @@ ENV/
 env.bak/
 venv.bak/
 
-# Testing
-.coverage
-.pytest_cache/
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
 htmlcov/
 .tox/
 .nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
 
 # IDEs
 .vscode/
@@ -66,6 +101,47 @@ htmlcov/
 *.swp
 *.swo
 *~
+.spyderproject
+.spyproject
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Desktop
+desktop/dist/
+desktop/build/
+desktop/.electron/
+
+# Mobile
+mobile/.expo/
+mobile/dist/
+mobile/web-build/
 
 # Database files
 *.db
@@ -73,17 +149,36 @@ htmlcov/
 *.sqlite3
 
 # Logs
-*.log
 logs/
+*.log
 
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Project specific
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+
+# API keys and secrets
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Social learning specific
+social_learning.db
+user_data.db
+test_database.db
 srs_engine.db
 demo_srs_engine.db
 test_srs_engine.db
-
-# Documentation
-docs/_build/
