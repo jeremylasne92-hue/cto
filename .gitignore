@@ -173,6 +173,7 @@ desktop/dist/
 desktop/build/
 desktop/out/
 desktop/.electron/
+release/
 
 # Mobile (React Native / Expo)
 mobile/.expo/
@@ -188,6 +189,8 @@ mobile/ios/build/
 *.sqlite
 *.sqlite3
 data/
+database.sqlite
+lancedb/
 
 # Logs
 logs/

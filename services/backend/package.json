@@ -1,0 +1,10 @@
+{
+  "name": "@cognisphere/backend",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Backend is managed by desktop-shell in dev mode'",
+    "install-deps": "pip install -r requirements.txt",
+    "build": "pyinstaller --onefile --name backend main.py"
+  }
+}
