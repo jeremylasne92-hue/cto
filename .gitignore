@@ -228,3 +228,5 @@ test_database.db
 srs_engine.db
 demo_srs_engine.db
 test_srs_engine.db
+
+!apps/desktop/src/lib/
